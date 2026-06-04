@@ -1,3 +1,5 @@
+variable_no_utilizada = "error_intencional"
+
 from django.contrib.auth.models import Group, User
 from rest_framework import serializers
 
