@@ -1,0 +1,72 @@
+services:
+  backend:
+    build: .
+    container_name: tareas_api_backend
+    command: uv run python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DB_NAME=tareas_db
+      - DB_USER=tareas_user
+      - DB_PASSWORD=tareas_password
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    container_name: tareas_api_postgres
+    environment:
+      - POSTGRES_DB=tareas_db
+      - POSTGRES_USER=tareas_user
+      - POSTGRES_PASSWORD=tareas_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  prometheus:
+    image: prom/prometheus
+    container_name: tareas_api_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana
+    container_name: tareas_api_grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  loki:
+    image: grafana/loki:3.5
+    container_name: tareas_api_loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:3.5
+    container_name: tareas_api_promtail
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+volumes:
+  postgres_data:
+  loki_data:
