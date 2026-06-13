@@ -11,4 +11,8 @@ wheels/
 
 *.sqlite3
 
+# SOPS / AGE
+key.txt
 
+# Variables de entorno
+.env
